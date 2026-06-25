@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Droplets, LayoutDashboard, Menu as MenuIcon, Sparkles } from 'lucide-react';
+import { Droplets, Menu as MenuIcon, Sparkles } from 'lucide-react';
 import HomePage from './pages/HomePage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
@@ -7,16 +7,33 @@ import AdminPage from './pages/AdminPage.jsx';
 const navItems = [
   { id: 'home', label: 'Главная', icon: Droplets },
   { id: 'menu', label: 'Меню', icon: MenuIcon },
-  { id: 'admin', label: 'Админ', icon: LayoutDashboard },
 ];
 
+function getInitialPage() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('admin') === '1' ? 'admin' : 'home';
+}
+
 export default function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(getInitialPage);
+
+  function navigate(nextPage) {
+    setPage(nextPage);
+
+    const url = new URL(window.location.href);
+    if (nextPage === 'admin') {
+      url.searchParams.set('admin', '1');
+    } else {
+      url.searchParams.delete('admin');
+    }
+
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
 
   const Page = useMemo(() => {
     if (page === 'menu') return <MenuPage />;
     if (page === 'admin') return <AdminPage />;
-    return <HomePage onOpenMenu={() => setPage('menu')} />;
+    return <HomePage onOpenMenu={() => navigate('menu')} />;
   }, [page]);
 
   return (
@@ -25,7 +42,11 @@ export default function App() {
       <div className="ambient ambient-two" />
 
       <nav className="topbar glass-panel">
-        <button className="brand" onClick={() => setPage('home')} aria-label="Открыть главную">
+        <button
+          className="brand"
+          onClick={(event) => navigate(event.altKey ? 'admin' : 'home')}
+          aria-label="Открыть главную"
+        >
           <span className="brand-mark">
             <Sparkles size={18} />
           </span>
@@ -39,7 +60,7 @@ export default function App() {
               <button
                 key={item.id}
                 className={`nav-button ${page === item.id ? 'is-active' : ''}`}
-                onClick={() => setPage(item.id)}
+                onClick={() => navigate(item.id)}
                 title={item.label}
               >
                 <Icon size={18} />
