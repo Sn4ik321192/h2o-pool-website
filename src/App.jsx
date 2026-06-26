@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Droplets, Menu as MenuIcon, Sparkles } from 'lucide-react';
 import HomePage from './pages/HomePage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
@@ -16,6 +16,8 @@ function getInitialPage() {
 
 export default function App() {
   const [page, setPage] = useState(getInitialPage);
+  const longPressTimer = useRef(null);
+  const longPressOpened = useRef(false);
 
   function navigate(nextPage) {
     setPage(nextPage);
@@ -28,6 +30,29 @@ export default function App() {
     }
 
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  function startLogoPress() {
+    longPressOpened.current = false;
+    window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressOpened.current = true;
+      navigate('admin');
+    }, 1800);
+  }
+
+  function stopLogoPress() {
+    window.clearTimeout(longPressTimer.current);
+  }
+
+  function handleLogoClick(event) {
+    if (longPressOpened.current) {
+      event.preventDefault();
+      longPressOpened.current = false;
+      return;
+    }
+
+    navigate(event.altKey ? 'admin' : 'home');
   }
 
   const Page = useMemo(() => {
@@ -44,7 +69,11 @@ export default function App() {
       <nav className="topbar glass-panel">
         <button
           className="brand"
-          onClick={(event) => navigate(event.altKey ? 'admin' : 'home')}
+          onClick={handleLogoClick}
+          onPointerDown={startLogoPress}
+          onPointerUp={stopLogoPress}
+          onPointerCancel={stopLogoPress}
+          onPointerLeave={stopLogoPress}
           aria-label="Открыть главную"
         >
           <span className="brand-mark">
